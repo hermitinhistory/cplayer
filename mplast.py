@@ -7,8 +7,8 @@ import shutil
 import copy
 
 
-confile = os.path.expanduser('~/.mplast.conf')
-# confile = 'mplast.txt'
+# confile = os.path.expanduser('~/.mplast.conf')
+lastfile = '.mplast.txt'
 
 
 def mplayer(filename, ss = '0', args = []):
@@ -31,7 +31,7 @@ def mplayer(filename, ss = '0', args = []):
     return t
 
 
-def read_ss(play):
+def read_ss(confile, play):
     r = csv.reader(open(confile, 'rb'))
     for row in r:
         if len(row) < 2: continue  # skip the broken line
@@ -41,7 +41,7 @@ def read_ss(play):
     return '0'
 
 
-def write_ss(play, ss):
+def write_ss(confile, play, ss):
     tmpfile = '/tmp/lskdfiudvndfklghdiuyfweml'
 
     rf = open(confile, 'rb')
@@ -71,16 +71,30 @@ def write_ss(play, ss):
     shutil.move(tmpfile, confile)
 
 
+def play_the_latest_file():
+    for line in open(lastfile, 'rb'):
+        pass
+
+    play, ss = line.split(',')
+    t = mplayer(play, ss, args)
+    write_ss(confile, play, t)
+
+
 def main(file2play, args):
-    os.system('touch ' + confile)  # create the confile when not exists
+    if len(file2play) == 0:
+        play_the_latest_file()
+        return
 
     for play in file2play:
+        confile = os.path.join(os.path.dirname(play), lastfile)
+        os.system('touch ' + confile)  # create the confile when not exists
+
         for i in range(len(args)):
             if args[i] == '-ss':
                 ss = args[i+1]
                 break
         else:
-            ss = read_ss(play)
+            ss = read_ss(confile, play)
 
         # remove the '-ss'
         if '-ss' in args:
@@ -90,8 +104,9 @@ def main(file2play, args):
 
         # print args
 
-        t = mplayer(play, ss, args)
-        write_ss(play, t)
+        # t = mplayer(play, ss, args)
+        t = 30
+        write_ss(confile, play, t)
 
 
 if __name__ == '__main__':
