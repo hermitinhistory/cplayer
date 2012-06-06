@@ -77,7 +77,7 @@ def play_the_latest_file():
 
     play, ss = line.split(',')
     t = mplayer(play, ss)
-    write_ss(confile, play, t)
+    write_ss(lastfile, play, t)
 
 
 def main(file2play, args):
