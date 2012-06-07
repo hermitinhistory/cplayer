@@ -7,9 +7,6 @@ import shutil
 import copy
 
 
-# confile = os.path.expanduser('~/.mplast.conf')
-lastfile = '.mplast.txt'
-
 
 def mplayer(filename, ss = '0', args = []):
     import subprocess as sp
@@ -71,20 +68,21 @@ def write_ss(confile, play, ss):
     shutil.move(tmpfile, confile)
 
 
-def play_the_latest_file():
-    for line in open(lastfile, 'rb'):
-        pass
+def play_the_latest_file(lastfile):
+    try:
+        for line in open(lastfile, 'rb'):
+            pass
+    except IOError, e:
+        print 'no last file to play, give the file to play'
+        return 
 
-    play, ss = line.split(',')
+    play, ss = line.strip().split(',')
     t = mplayer(play, ss)
     write_ss(lastfile, play, t)
 
 
-def main(file2play, args):
-    if len(file2play) == 0:
-        play_the_latest_file()
-        return
 
+def play_the_given_file(file2play, lastfile, args):
     for play in file2play:
         confile = os.path.join(os.path.dirname(play), lastfile)
         os.system('touch ' + confile)  # create the confile when not exists
@@ -108,9 +106,20 @@ def main(file2play, args):
         write_ss(confile, play, t)
 
 
+def main(file2play, lastfile, args):
+    if len(file2play) == 0:
+        play_the_latest_file(lastfile)
+    else:
+        play_the_given_file(file2play, lastfile, args)
+
+
 if __name__ == '__main__':
+    # confile = os.path.expanduser('~/.mplast.conf')
+    lastfile = '.mplast.txt'
+
+
     file2play = [a for a in sys.argv[1:] if os.path.exists(a)]
     args = [a for a in sys.argv[1:] if a not in file2play]
     file2play = [os.path.abspath(a) for a in file2play]
-    main(file2play, args)
+    main(file2play, lastfile, args)
 
