@@ -13,11 +13,16 @@ def mplayer(filename, ss = '0', args = []):
 
     if filename[0] != '"':
         filename = '"' + filename + '"'
-    cmd2play='mplayer ' + filename + ' -ss ' + ss + ' ' + ' '.join(args)
-    # print cmd2play
+    cmd2play = 'mplayer ' + filename + ' -ss ' + ss + ' ' + ' '.join(args)
+    print cmd2play
+    cmd2play += ' 2>/dev/null'
 
-    tline = sp.check_output(cmd2play, shell=True)[-200:].split('\x1b[J\r')[-2]
-    print tline
+
+    try:
+        tline = sp.check_output(cmd2play, shell=True)[-200:].split('\x1b[J\r')[-2]
+    except IndexError:          # not a palyable file
+        return None
+
     t = tline.split(':')[1].split('.')[0].strip()
 
     # seek backward 10 sec
@@ -68,23 +73,36 @@ def write_ss(confile, play, ss):
     shutil.move(tmpfile, confile)
 
 
-def play_the_latest_file(lastfile):
+def get_the_latest_file_list(configfile):
     try:
-        for line in open(lastfile, 'rb'):
+        for line in open(configfile, 'rb'):
             pass
     except IOError, e:
-        print 'no last file to play, give the file to play'
-        return 
+        print 'No config file found, you must give the file to plsy for the first time.'
+        sys.exit(-1)
 
     play, ss = line.strip().split(',')
-    t = mplayer(play, ss)
-    write_ss(lastfile, play, t)
+
+    allfile = os.listdir('./')
+    allfile.sort()
+    allfile = filter(os.path.isfile, allfile)
+    allfile = map(os.path.abspath, allfile)
+    i = allfile.index(play)
+    return allfile[i:]
 
 
-
-def play_the_given_file(file2play, lastfile, args):
+def play_the_given_file(file2play, configfile, args=''):
+    firstflay = True
     for play in file2play:
-        confile = os.path.join(os.path.dirname(play), lastfile)
+        if not firstflay:
+            prompt = 'continue the next file(y/n):[y] '
+            c = raw_input(prompt)
+            if c != '' and c != 'y':
+                break
+
+        firstflay = False
+
+        confile = os.path.join(os.path.dirname(play), configfile)
         os.system('touch ' + confile)  # create the confile when not exists
 
         for i in range(len(args)):
@@ -100,26 +118,26 @@ def play_the_given_file(file2play, lastfile, args):
             args.remove(args[index + 1])
             args.remove('-ss')
 
-        # print args
 
         t = mplayer(play, ss, args)
-        write_ss(confile, play, t)
+        if t != None:
+            write_ss(confile, play, t)
 
 
-def main(file2play, lastfile, args):
+def main(file2play, configfile, args):
     if len(file2play) == 0:
-        play_the_latest_file(lastfile)
-    else:
-        play_the_given_file(file2play, lastfile, args)
+        file2play = get_the_latest_file_list(configfile)
+
+    play_the_given_file(file2play, configfile, args)
 
 
 if __name__ == '__main__':
     # confile = os.path.expanduser('~/.mplast.conf')
-    lastfile = '.mplast.txt'
+    configfile = '.mplast.txt'
 
 
     file2play = [a for a in sys.argv[1:] if os.path.exists(a)]
     args = [a for a in sys.argv[1:] if a not in file2play]
     file2play = [os.path.abspath(a) for a in file2play]
-    main(file2play, lastfile, args)
+    main(file2play, configfile, args)
 
