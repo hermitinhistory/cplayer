@@ -1,5 +1,6 @@
-a front-end for mplayer to remember last position of the video played.
+A front-end for mplayer to remember last position of the video played.
+It is made for watch the video from coursera.
 
 you can check the latest code on github:
-git://github.com/hermitinhistory/mplast.git
+https://github.com/hermitinhistory/cplayer.git
 
