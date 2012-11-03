@@ -7,7 +7,7 @@ import csv
 import shutil
 
 
-def mplayer(filename, ss = '0', args = []):
+def mplayer(filename, ss='0', args=[]):
     import subprocess as sp
 
     if filename[0] != '"':
@@ -34,7 +34,8 @@ def mplayer(filename, ss = '0', args = []):
 def read_ss(confile, play):
     r = csv.reader(open(confile, 'rb'))
     for row in r:
-        if len(row) < 2: continue  # skip the broken line
+        if len(row) < 2:
+            continue  # skip the broken line
         if row[0] == play:
             return row[1]
 
@@ -51,7 +52,8 @@ def write_ss(confile, play, ss):
 
     writed = False
     for row in r:
-        if len(row) < 2: continue  # skip the broken line
+        if len(row) < 2:
+            continue  # skip the broken line
 
         # update the play
         if row[0] == play:
@@ -72,26 +74,34 @@ def write_ss(confile, play, ss):
 
 def get_the_latest_avfile_list(configfile):
     def sort_cmp(x, y):
-        alphabet = map(chr, range(0, 127))
-        return alphabet.index(x)
+        a, b = map(int, x.split(' - ')[0:2])
+        c, d = map(int, y.split(' - ')[0:2])
+        if a > c:
+            return 1
+        elif a < c:
+            return -1
+        else:
+            if b > d:
+                return 1
+            elif b < d:
+                return -1
+            else:
+                return 0
 
     try:
         for line in open(configfile, 'rb'):
             pass
     except IOError:
-        print 'No config file found, you must give the file to plsy for the first time.'
-        sys.exit(-1)
+        print 'No config file found, you must give the file to play for the first time.'
+        sys.exit(1)
 
     play, ss = line.strip().split(',')
 
     avsuffix = ['mp4', 'f4v']
     allfile = os.listdir('./')
-    allfile = filter(lambda x: x.split('.')[-1] in avsuffix, allfile)
-    allfile.sort()
-    #allfile.sort(cmp=sort_cmp)
-    #print allfile
-    #sys.exit(0)
     allfile = filter(os.path.isfile, allfile)
+    allfile = filter(lambda x: x.split('.')[-1] in avsuffix, allfile)
+    allfile.sort(cmp=sort_cmp)
     allfile = map(os.path.abspath, allfile)
     i = allfile.index(play)
     return allfile[i:]
