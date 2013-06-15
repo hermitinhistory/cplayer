@@ -5,6 +5,7 @@ import os
 import sys
 import csv
 import shutil
+import time
 
 
 def mplayer(filename, ss='0', args=[]):
@@ -93,16 +94,7 @@ def get_the_latest_avfile_list(configfile):
 
 
 def play_the_given_file(file2play, configfile, args=''):
-    firstflay = True
     for play in file2play:
-        if not firstflay:
-            prompt = play + ', continue(y/n):[y] '
-            c = raw_input(prompt)
-            if c != '' and c != 'y':
-                break
-
-        firstflay = False
-
         confile = os.path.join(os.path.dirname(play), configfile)
         os.system('touch ' + confile)  # create the confile when not exists
 
@@ -122,6 +114,9 @@ def play_the_given_file(file2play, configfile, args=''):
         t = mplayer(play, ss, args)
         if t is not None:
             write_ss(confile, play, t)
+
+        # sleep for 'ctrl + c' to exit
+        time.sleep(1)
 
 
 def main(file2play, configfile, args):
