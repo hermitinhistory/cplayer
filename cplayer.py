@@ -79,13 +79,16 @@ def get_the_latest_avfile_list(configfile):
         digit_in_y = map(int, re.findall(r'\d+', y))
         return 1 if digit_in_x > digit_in_y else -1
 
-    play, ss = open(configfile, 'rb').readlines()[-1].strip().split(',')
-
-    avsuffix = ['mp4', 'f4v']
+    avsuffix = ['mp4', 'f4v', 'flv']
     avfiles = filter(lambda x: os.path.isfile(x) and x.split('.')[-1] in avsuffix, os.listdir('./'))
     avfiles.sort(cmp=sort_cmp)
     avfiles = map(os.path.abspath, avfiles)
-    i = avfiles.index(play)
+
+    try:
+        play, ss = open(configfile, 'rb').readlines()[-1].strip().split(',')
+        i = avfiles.index(play)
+    except:
+        i = 0
     return avfiles[i:]
 
 
@@ -123,9 +126,6 @@ def play_the_given_file(file2play, configfile, args=''):
 
 def main(file2play, configfile, args):
     if len(file2play) == 0:
-        if not os.path.exists(configfile):
-            print 'No config file found, you must give the file to play for the first time.'
-            sys.exit(1)
         file2play = get_the_latest_avfile_list(configfile)
 
     play_the_given_file(file2play, configfile, args)
