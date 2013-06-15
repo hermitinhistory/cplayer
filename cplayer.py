@@ -16,25 +16,25 @@ def mplayer(filename, ss='0', args=[]):
     print cmd2play
     cmd2play += ' 2>/dev/null'
 
+    player_out_txt = sp.check_output(cmd2play, shell=True)
     try:
-        tline = sp.check_output(cmd2play, shell=True)[-200:].split('\x1b[J\r')[-2]
-    except IndexError:          # not a palyable file
+        tline = player_out_txt[-200:].split('\r')[-2]
+        t = int(tline.split(':')[1].split('.')[0].strip())
+    except:
         return None
 
-    t = tline.split(':')[1].split('.')[0].strip()
-
     # seek backward 10 sec
-    t = str(int(t) - 10)
-    if int(t) < 0:
-        t = '0'
+    t = t - 10
+    if t < 0:
+        t = 0
 
-    return t
+    return str(t)
 
 
 def read_ss(confile, play):
     r = csv.reader(open(confile, 'rb'))
     for row in r:
-        if len(row) < 2:
+        if len(row) != 2:
             continue  # skip the broken line
         if row[0] == play:
             return row[1]
@@ -52,7 +52,7 @@ def write_ss(confile, play, ss):
 
     writed = False
     for row in r:
-        if len(row) < 2:
+        if len(row) != 2:
             continue  # skip the broken line
 
         # update the play
@@ -74,37 +74,19 @@ def write_ss(confile, play, ss):
 
 def get_the_latest_avfile_list(configfile):
     def sort_cmp(x, y):
-        a, b = map(int, x.split(' - ')[0:2])
-        c, d = map(int, y.split(' - ')[0:2])
-        if a > c:
-            return 1
-        elif a < c:
-            return -1
-        else:
-            if b > d:
-                return 1
-            elif b < d:
-                return -1
-            else:
-                return 0
+        import re
+        digit_in_x = map(int, re.findall(r'\d+', x))
+        digit_in_y = map(int, re.findall(r'\d+', y))
+        return 1 if digit_in_x > digit_in_y else -1
 
-    try:
-        for line in open(configfile, 'rb'):
-            pass
-    except IOError:
-        print 'No config file found, you must give the file to play for the first time.'
-        sys.exit(1)
-
-    play, ss = line.strip().split(',')
+    play, ss = open(configfile, 'rb').readlines()[-1].strip().split(',')
 
     avsuffix = ['mp4', 'f4v']
-    allfile = os.listdir('./')
-    allfile = filter(os.path.isfile, allfile)
-    allfile = filter(lambda x: x.split('.')[-1] in avsuffix, allfile)
-    allfile.sort(cmp=sort_cmp)
-    allfile = map(os.path.abspath, allfile)
-    i = allfile.index(play)
-    return allfile[i:]
+    avfiles = filter(lambda x: os.path.isfile(x) and x.split('.')[-1] in avsuffix, os.listdir('./'))
+    avfiles.sort(cmp=sort_cmp)
+    avfiles = map(os.path.abspath, avfiles)
+    i = avfiles.index(play)
+    return avfiles[i:]
 
 
 def play_the_given_file(file2play, configfile, args=''):
@@ -141,14 +123,16 @@ def play_the_given_file(file2play, configfile, args=''):
 
 def main(file2play, configfile, args):
     if len(file2play) == 0:
+        if not os.path.exists(configfile):
+            print 'No config file found, you must give the file to play for the first time.'
+            sys.exit(1)
         file2play = get_the_latest_avfile_list(configfile)
 
     play_the_given_file(file2play, configfile, args)
 
 
 if __name__ == '__main__':
-    # confile = os.path.expanduser('~/.mplast.conf')
-    configfile = '.mplast.txt'
+    configfile = '.cplayer.txt'
 
     file2play = [a for a in sys.argv[1:] if os.path.exists(a)]
     args = [a for a in sys.argv[1:] if a not in file2play]
